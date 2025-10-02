@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symmetric Encryption Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f9;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-around;
+            width: 90%;
+            max-width: 1000px;
+            margin-bottom: 40px;
+        }
+
+        .party {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 40%;
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        .key-box {
+            background-color: #ffcc00; /* Yellow for the key */
+            border: 2px solid #e6b800;
+            padding: 5px 15px;
+            margin: 10px auto;
+            border-radius: 5px;
+            display: inline-block;
+            font-weight: bold;
+        }
+
+        .message-box {
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px dashed #ccc;
+            min-height: 40px;
+            background-color: #e9e9e9;
+        }
+
+        #animation-area {
+            position: relative;
+            width: 100%;
+            height: 50px; /* Space for the animated key/message */
+            margin: 20px 0;
+        }
+
+        .anim-item {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #007bff;
+            color: white;
+            padding: 8px;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 1.5s ease-in-out; /* Smooth transition for animation */
+        }
+
+        .control-buttons {
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 1.1em;
+            color: #d9534f; /* Red for emphasis */
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Symmetric Encryption (Alice &harr; Bob) - Shared Secret Key</h1>
+
+    <div class="container">
+        <div class="party" id="alice-box">
+            <h2>Alice 👩‍💻 (Sender)</h2>
+            <div class="key-box">Secret Key: K</div>
+            <p><strong>Original Message (Plaintext):</strong></p>
+            <div class="message-box" id="alice-plaintext">HELLO</div>
+            <p><strong>Encrypted Message (Ciphertext):</strong></p>
+            <div class="message-box" id="alice-ciphertext"></div>
+        </div>
+
+        <div class="party" id="bob-box">
+            <h2>Bob 🧑‍💻 (Receiver)</h2>
+            <div class="key-box">Secret Key: K</div>
+            <p><strong>Received Ciphertext:</strong></p>
+            <div class="message-box" id="bob-received-ciphertext"></div>
+            <p><strong>Decrypted Message (Plaintext):</strong></p>
+            <div class="message-box" id="bob-decrypted-plaintext"></div>
+        </div>
+    </div>
+
+    <div id="animation-area">
+        <div class="anim-item" id="anim-key">KEY</div>
+        <div class="anim-item" id="anim-message">MESSAGE</div>
+    </div>
+
+    <div class="control-buttons">
+        <button onclick="startKeyExchange()">1. Key Exchange 🔑</button>
+        <button onclick="startEncryption()">2. Encrypt & Send 🔒</button>
+        <button onclick="startDecryption()">3. Decrypt & Read 🔓</button>
+        <button onclick="resetVisualization()">Reset</button>
+    </div>
+
+    <div id="status">Click "Key Exchange" to begin the process.</div>
+
+    <script>
+        const aliceBox = document.getElementById('alice-box');
+        const bobBox = document.getElementById('bob-box');
+        const animKey = document.getElementById('anim-key');
+        const animMessage = document.getElementById('anim-message');
+        const statusDiv = document.getElementById('status');
+        const aliceCiphertext = document.getElementById('alice-ciphertext');
+        const bobReceivedCiphertext = document.getElementById('bob-received-ciphertext');
+        const bobDecryptedPlaintext = document.getElementById('bob-decrypted-plaintext');
+
+        // Calculate positions dynamically for responsiveness
+        function calculatePositions() {
+            // Get the current positions for the animation
+            const aliceCenter = aliceBox.offsetLeft + (aliceBox.offsetWidth / 2);
+            const bobCenter = bobBox.offsetLeft + (bobBox.offsetWidth / 2);
+            const itemWidth = animKey.offsetWidth / 2;
+            
+            return {
+                ALICE_POS: aliceCenter - itemWidth,
+                BOB_POS: bobCenter - itemWidth
+            };
+        }
+        
+        // Initial setup for the animation items
+        function initialSetup() {
+            const { ALICE_POS, BOB_POS } = calculatePositions();
+
+            // Set initial positions
+            animKey.style.left = ALICE_POS + 'px';
+            animMessage.style.left = ALICE_POS + 'px';
+
+            // Initial styling/visibility
+            animKey.style.backgroundColor = '#ffcc00'; // Yellow
+            animKey.textContent = 'KEY (K)';
+            animKey.style.opacity = '0'; 
+            
+            animMessage.style.backgroundColor = '#007bff'; // Blue
+            animMessage.textContent = 'MESSAGE';
+            animMessage.style.opacity = '0';
+        }
+
+        window.onload = initialSetup;
+        window.onresize = initialSetup; // Re-align on resize
+
+        function updateStatus(message, color = '#d9534f') {
+            statusDiv.textContent = message;
+            statusDiv.style.color = color;
+        }
+
+        function resetVisualization() {
+            initialSetup();
+            aliceCiphertext.textContent = '';
+            bobReceivedCiphertext.textContent = '';
+            bobDecryptedPlaintext.textContent = '';
+            updateStatus('Visualization Reset. Click "Key Exchange" to start.', '#333');
+        }
+
+        function startKeyExchange() {
+            const { ALICE_POS, BOB_POS } = calculatePositions();
+
+            updateStatus('1. Key Exchange: Alice and Bob securely establish the Secret Key (K).', '#28a745');
+            animKey.style.left = ALICE_POS + 'px';
+            animKey.style.opacity = '1';
+            
+            // Move key from Alice to Bob
+            setTimeout(() => {
+                animKey.style.left = BOB_POS + 'px';
+                updateStatus('The Secret Key (K) is securely transferred to Bob.', '#28a745');
+            }, 100); 
+
+            // Key "settles" with Bob (and Alice already has it)
+            setTimeout(() => {
+                animKey.style.opacity = '0';
+                updateStatus('Key Exchange complete. Both Alice and Bob share the Secret Key (K).', '#28a745');
+            }, 1600);
+        }
+
+        function startEncryption() {
+            const { ALICE_POS, BOB_POS } = calculatePositions();
+
+            updateStatus('2. Encryption: Alice uses K to encrypt "HELLO" into Ciphertext.', '#ff8c00');
+            aliceCiphertext.textContent = 'CIPHERTEXT'; // Show encrypted text
+            
+            animMessage.style.left = ALICE_POS + 'px';
+            animMessage.style.backgroundColor = '#dc3545'; // Red for ciphertext
+            animMessage.textContent = 'CIPHERTEXT';
+            animMessage.style.opacity = '1';
+
+            // Send Ciphertext from Alice to Bob
+            setTimeout(() => {
+                animMessage.style.left = BOB_POS + 'px';
+                updateStatus('The Ciphertext is sent across the insecure channel.', '#ff8c00');
+            }, 100); 
+
+            // Ciphertext arrives at Bob
+            setTimeout(() => {
+                animMessage.style.opacity = '0';
+                bobReceivedCiphertext.textContent = 'CIPHERTEXT';
+                updateStatus('Ciphertext received by Bob. Ready for Decryption.', '#ff8c00');
+            }, 1600);
+        }
+
+        function startDecryption() {
+            const { BOB_POS } = calculatePositions();
+
+            updateStatus('3. Decryption: Bob uses the *same* Secret Key (K) to decrypt the Ciphertext.', '#17a2b8');
+            
+            // Key visualization for decryption
+            animKey.style.left = BOB_POS + 'px';
+            animKey.style.opacity = '1';
+            
+            // Decryption process
+            setTimeout(() => {
+                bobDecryptedPlaintext.textContent = 'HELLO';
+                bobReceivedCiphertext.textContent = '...Decrypted...';
+                animKey.style.opacity = '0'; // Hide key after use
+                updateStatus('Decryption successful! Bob reads the original message: HELLO.', '#17a2b8');
+            }, 1500);
+        }
+
+    </script>
+</body>
+</html>
